@@ -1,4 +1,4 @@
-name: Akri on MicroK8s
+name: Setup MicroK8s multi-node cluster
 
 on:  
 
