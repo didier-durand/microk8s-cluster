@@ -15,7 +15,7 @@ on:
         required: true
  
 jobs:
-  microk8s-akri:
+  microk8s-cluster:
   
     runs-on: ubuntu-20.10
 
