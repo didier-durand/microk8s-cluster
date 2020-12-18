@@ -39,6 +39,7 @@ if [[ -z ${MK8S_VERSION+x} ]]                                 ; then MK8S_VERSIO
 if [[ -z ${MK8S_TOKEN+x} ]]                                   ; then MK8S_TOKEN='abcdefghijklmnopqrstuvwxyz123456'      ; fi ; echo "microk8s token:  $MK8S_TOKEN"
 if [[ -z ${MK8S_NODES+x} ]]                                   ; then MK8S_NODES=3                                       ; fi ; echo "microk8s nodes : $MK8S_NODES"
 if [[ -z ${MK8S_NODE_PREFIX+x} ]]                             ; then MK8S_NODE_PREFIX='microk8s-cluster-'               ; fi ; echo "microk8s prefix : $MK8S_NODE_PREFIX"
+if [[ -z ${MK8S_PORT_FORWARD+x} ]]                            ; then MK8S_PORT_FORWARD='true'                           ; fi ; echo "microk8s port forward : $MK8S_PORT_FORWARD"
 
 if [[ -z ${MAX_ITERATIONS+x} ]]                               ; then MAX_ITERATIONS=6                                   ; fi ; echo "max iterations : $MAX_ITERATIONS"
 
@@ -145,13 +146,26 @@ then
       
     done
     
+    #generate report when on Github - get data by scp-ing back to last started instance
+    if [[ ! -z "$GITHUB_WORKFLOW" ]]
+    then
+      echo -e "### generating execution report..."
+      gcloud compute scp $GCE_INSTANCE:$REPORT $REPORT --zone $GCP_ZONE --project=$GCP_PROJECT
+      cat README.template.md > README.md
+    
+      echo '## Execution Report' >> README.md
+      echo '```' >> README.md
+      cat $REPORT >> README.md
+      echo '```' >> README.md
+    fi
+    
     exit 0
 
   fi 
   
 fi
 
-#gcloud compute ssh microk8s-cilium-1 --zone 'us-central1-c' --project=$GCP_PROJECT
+#gcloud compute ssh microk8s-cluster-1 --zone 'us-central1-c' --project=$GCP_PROJECT
 
 echo -e "\n### running on GCE\n"
 
@@ -211,8 +225,6 @@ exec_step2()
   then
     echo -e "\n### create cluster: " | tee -a "$REPORT"
     microk8s status --wait-ready
-    #CREATE_CLUSTER="$(microk8s add-node)"
-    #https://microk8s.io/docs/commands#heading--microk8s-add-node
     CREATE_CLUSTER="$(microk8s add-node --token $MK8S_TOKEN --token-ttl 7200)"
     echo -e "$CREATE_CLUSTER" | tee -a "$REPORT"
     JOIN_CLUSTER_COMMAND=$(echo "$CREATE_CLUSTER" | grep -m 1 '^microk8s join')
@@ -220,21 +232,25 @@ exec_step2()
     #command will be captured from token
     echo -e "$JOIN_CLUSTER_COMMAND_TAG: $JOIN_CLUSTER_COMMAND"
     
-    microk8s enable storage
-    microk8s enable dns
-    microk8s enable dashboard
-    microk8s status --wait-ready
+    microk8s enable storage | tee -a "$REPORT"
+    microk8s enable dns | tee -a "$REPORT"
+    microk8s enable dashboard | tee -a "$REPORT"
+    microk8s status --wait-ready | tee -a "$REPORT"
   else
+    echo -e "\n### join cluster: " | tee -a "$REPORT"
     PRIMARY_IP=$(echo $JOIN_CLUSTER_COMMAND | awk '{print $3}' | sed 's/:.*//' )
-    echo -e "### check primary node connectivity : $PRIMARY_IP"
-    ping -c 5 "$PRIMARY_IP"
-    echo -e "### joining cluster: $JOIN_CLUSTER_COMMAND"
-    eval "$JOIN_CLUSTER_COMMAND"
+    echo -e "### check primary node connectivity from $GCE_INSTANCE: $PRIMARY_IP" | tee -a "$REPORT"
+    ping -c 5 "$PRIMARY_IP" | tee -a "$REPORT"
+    echo -e "### joining cluster from $GCE_INSTANCE: $JOIN_CLUSTER_COMMAND"
+    eval "$JOIN_CLUSTER_COMMAND" | tee -a "$REPORT"
     microk8s status --wait-ready
+    
   fi
   
   echo -e "\n### check nodes in cluster: " | tee -a "$REPORT"
   microk8s kubectl get nodes | tee -a "$REPORT"
+  
+  microk8s status | tee -a "$REPORT"
   
   echo -e "$STEP_COMPLETED $STEP on $GCE_INSTANCE"
   echo -e "$SCRIPT_COMPLETED on $GCE_INSTANCE"
