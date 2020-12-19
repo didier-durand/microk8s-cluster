@@ -35,7 +35,7 @@ if [[ -z ${GCE_IMAGE_FAMILY+x} ]]                             ; then GCE_IMAGE_F
 if [[ -z ${GCE_IMAGE_PROJECT+x} ]]                            ; then GCE_IMAGE_PROJECT='ubuntu-os-cloud'                ; fi ; echo "gce image project: $GCE_IMAGE_PROJECT"
 if [[ -z ${GCE_MACHINE_TYPE+x} ]]                             ; then GCE_MACHINE_TYPE='n1-standard-2'                   ; fi ; echo "gce machine type: $GCE_MACHINE_TYPE"
 
-if [[ -z ${MK8S_VERSION+x} ]]                                 ; then MK8S_VERSION='1.20'                                ; fi ; echo "microk8s version: $MK8S_VERSION"
+if [[ -z ${MK8S_VERSION+x} ]]                                 ; then MK8S_VERSION='1.18'                                ; fi ; echo "microk8s version: $MK8S_VERSION"
 if [[ -z ${MK8S_TOKEN+x} ]]                                   ; then MK8S_TOKEN='abcdefghijklmnopqrstuvwxyz123456'      ; fi ; echo "microk8s token:  $MK8S_TOKEN"
 if [[ -z ${MK8S_NODES+x} ]]                                   ; then MK8S_NODES=3                                       ; fi ; echo "microk8s nodes : $MK8S_NODES"
 if [[ -z ${MK8S_NODE_PREFIX+x} ]]                             ; then MK8S_NODE_PREFIX='microk8s-cluster-'               ; fi ; echo "microk8s prefix : $MK8S_NODE_PREFIX"
